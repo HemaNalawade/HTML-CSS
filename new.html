@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transaction Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #month-selector, #search-box, button {
+            margin: 10px 0;
+            padding: 10px;
+            font-size: 16px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        #transaction-stats {
+            margin: 20px 0;
+            font-size: 18px;
+        }
+        #bar-chart-container {
+            margin-top: 30px;
+            width: 100%;
+        }
+        canvas {
+            width: 100% !important;
+            height: 300px !important;
+        }
+    </style>
+</head>
+<body>
+
+    <select id="month-selector">
+        <option value="1">January</option>
+        <option value="2">February</option>
+        <option value="3" selected>March</option>
+        <option value="4">April</option>
+        <option value="5">May</option>
+        <option value="6">June</option>
+        <option value="7">July</option>
+        <option value="8">August</option>
+        <option value="9">September</option>
+        <option value="10">October</option>
+        <option value="11">November</option>
+        <option value="12">December</option>
+    </select>
+
+    <input type="text" id="search-box" placeholder="Search Transactions">
+
+    <table id="transaction-table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Title</th>
+                <th>Description</th>
+                <th>Price</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Transactions dynamically injected here -->
+        </tbody>
+    </table>
+
+    <div id="transaction-stats">
+        <p>Total Sales: <span id="total-sales">$0.00</span></p>
+        <p>Total Sold Items: <span id="total-sold">0</span></p>
+        <p>Total Not Sold Items: <span id="total-not-sold">0</span></p>
+    </div>
+
+    <div id="bar-chart-container">
+        <canvas id="transaction-bar-chart"></canvas>
+    </div>
+
+    <button id="previous-page">Previous</button>
+    <button id="next-page">Next</button>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        let currentPage = 1;
+
+        // Function to fetch transactions based on month, search text, and page
+        function fetchTransactions(month, search = '', page = 1) {
+            // Replace this with actual API call
+            console.log(`Fetching transactions for month: ${month}, search: ${search}, page: ${page}`);
+            // For demonstration purposes, using static data
+            const mockTransactions = [
+                { date: '2023-03-01', title: 'Transaction 1', description: 'Desc 1', price: 100 },
+                { date: '2023-03-02', title: 'Transaction 2', description: 'Desc 2', price: 200 },
+                { date: '2023-03-03', title: 'Transaction 3', description: 'Desc 3', price: 150 }
+            ];
+            populateTransactionTable(mockTransactions);
+            updateStatistics(mockTransactions);
+            renderBarChart([50, 100, 150, 200], [2, 4, 6, 3]); // Static for now
+        }
+
+        // Populate transaction table
+        function populateTransactionTable(transactions) {
+            const tbody = document.querySelector('#transaction-table tbody');
+            tbody.innerHTML = ''; // Clear existing rows
+            transactions.forEach(transaction => {
+                const row = `<tr>
+                    <td>${transaction.date}</td>
+                    <td>${transaction.title}</td>
+                    <td>${transaction.description}</td>
+                    <td>$${transaction.price}</td>
+                </tr>`;
+                tbody.innerHTML += row;
+            });
+        }
+
+        // Update transaction statistics
+        function updateStatistics(transactions) {
+            const totalSales = transactions.reduce((sum, transaction) => sum + transaction.price, 0);
+            const totalSoldItems = transactions.length; // Assume all are sold for now
+            const totalNotSoldItems = 0; // Static for demo
+            document.querySelector('#total-sales').textContent = `$${totalSales}`;
+            document.querySelector('#total-sold').textContent = totalSoldItems;
+            document.querySelector('#total-not-sold').textContent = totalNotSoldItems;
+        }
+
+        // Render bar chart using Chart.js
+        function renderBarChart(priceRanges, itemCounts) {
+            const ctx = document.querySelector('#transaction-bar-chart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: priceRanges.map(price => `$${price} - $${price + 50}`),
+                    datasets: [{
+                        label: 'Number of Items',
+                        data: itemCounts,
+                        backgroundColor: 'rgba(54, 162, 235, 0.6)'
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Price Range'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Number of Items'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Handle month selection change
+        document.querySelector('#month-selector').addEventListener('change', (event) => {
+            const selectedMonth = event.target.value;
+            fetchTransactions(selectedMonth);
+        });
+
+        // Handle search input
+        document.querySelector('#search-box').addEventListener('input', (event) => {
+            const searchText = event.target.value;
+            const selectedMonth = document.querySelector('#month-selector').value;
+            fetchTransactions(selectedMonth, searchText);
+        });
+
+        // Handle pagination (Next)
+        document.querySelector('#next-page').addEventListener('click', () => {
+            currentPage++;
+            const selectedMonth = document.querySelector('#month-selector').value;
+            fetchTransactions(selectedMonth, '', currentPage);
+        });
+
+        // Handle pagination (Previous)
+        document.querySelector('#previous-page').addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                const selectedMonth = document.querySelector('#month-selector').value;
+                fetchTransactions(selectedMonth, '', currentPage);
+            }
+        });
+
+        // Initial load (default March month)
+        fetchTransactions(3); // March as default
+    </script>
+</body>
+</html>
